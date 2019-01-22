@@ -6,13 +6,22 @@ import wx
 
 
 class GridFrame(wx.Frame):
+    X_POS = 3800
+    Y_POS = 0
+    STATION = "Richard-Strauss-Straße"
+    STATIONID = mvg_api.get_id_for_station(STATION)
+
     def __init__(self):
 
-        self.depatures = mvg_api.get_departures(680)
+        # GUI Implementation
+        wx.Frame.__init__(self, parent=None, title=self.STATION, size=(315, 450))
 
-        wx.Frame.__init__(self, parent=None, title="Abfahrten an der Richard Strauss Straße", size=(310, 400))
+        icon = wx.Icon()
+        icon.CopyFromBitmap(wx.Bitmap("icon.ico", wx.BITMAP_TYPE_ANY))
+        self.SetIcon(icon)
 
-        # Add a panel so it looks the correct on all platforms
+        self.SetPosition((self.X_POS, self.Y_POS))
+
         panel = wx.Panel(self, wx.ID_ANY)
         self.index = 0
 
@@ -20,13 +29,16 @@ class GridFrame(wx.Frame):
                                      style=wx.LC_REPORT
                                            |wx.BORDER_SUNKEN
                                      )
-        self.list_ctrl.InsertColumn(0, '', width=40)
-        self.list_ctrl.InsertColumn(1, '', width=180)
-        self.list_ctrl.InsertColumn(2, '', width=50)
+        self.list_ctrl.InsertColumn(0, 'Linie', width=40)
+        self.list_ctrl.InsertColumn(1, 'Ziel', width=180)
+        self.list_ctrl.InsertColumn(2, 'min', width=50)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.list_ctrl, 0, wx.ALL|wx.EXPAND, 5)
         panel.SetSizer(sizer)
+        # Start of Logic
+
+        self.depatures = mvg_api.get_departures(self.STATIONID)
 
         t = threading.Thread(target=self.destinationreload)
         t.daemon = True
@@ -56,15 +68,11 @@ class GridFrame(wx.Frame):
         asigndepatures(self)
         while True:
             sleepTime = (self.depatures[0]['departureTime'] / 1000) - time.time()
-            print(self.depatures[0]['departureTime'] / 1000)
-            print(time.time())
-            print(self.depatures[0])
-            print(sleepTime)
             if sleepTime > 0:
                 time.sleep(sleepTime)
             else:
                 time.sleep(15)
-                ndepatures = mvg_api.get_departures(680)
+                ndepatures = mvg_api.get_departures(self.STATIONID)
                 if (ndepatures[0] != self.depatures[0]):
                     self.depatures = ndepatures
                     asigndepatures(self)
@@ -76,6 +84,6 @@ class GridFrame(wx.Frame):
 if __name__ == '__main__':
 
     app = wx.App(False)
-    frame = GridFrame()  # id 680
+    frame = GridFrame()
     frame.Show(True)
     app.MainLoop()
