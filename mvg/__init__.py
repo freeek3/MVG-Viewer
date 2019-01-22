@@ -4,6 +4,7 @@ import time
 import mvg_api
 import wx
 
+name = "mvg"
 
 class GridFrame(wx.Frame):
     X_POS = 3800
@@ -67,23 +68,23 @@ class GridFrame(wx.Frame):
 
         asigndepatures(self)
         while True:
-            sleepTime = (self.depatures[0]['departureTime'] / 1000) - time.time()
-            if sleepTime > 0:
-                time.sleep(sleepTime)
+            sleeptime = (self.depatures[0]['departureTime'] / 1000) - time.time()
+            if sleeptime > 0:
+                time.sleep(sleeptime)
             else:
                 time.sleep(15)
                 ndepatures = mvg_api.get_departures(self.STATIONID)
-                if (ndepatures[0] != self.depatures[0]):
+                if ndepatures[0] != self.depatures[0]:
                     self.depatures = ndepatures
                     asigndepatures(self)
 
 
-
-
-
-if __name__ == '__main__':
-
+def main():
     app = wx.App(False)
     frame = GridFrame()
     frame.Show(True)
     app.MainLoop()
+
+
+if __name__ == '__main__':
+    main()

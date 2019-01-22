@@ -13,6 +13,8 @@ END_PAUSE = 'G'
 SOLL = 'K'
 OFFSET = 8
 
+name = "timetracker"
+
 
 def writetofile(f, sheet, col, offset, val):
     '''
@@ -31,16 +33,20 @@ def writetofile(f, sheet, col, offset, val):
     wb.save(f)
 
 
-if __name__ == '__main__':
-
-    if sys.argv[1] == 'startpause':
-        writetofile(FILENAME, SHEET, START_PAUSE, OFFSET, TIME)
-    elif sys.argv[1] == 'endpause':
-        writetofile(FILENAME, SHEET, END_PAUSE, OFFSET, TIME)
-    elif sys.argv[1] == 'start':
-        writetofile(FILENAME, SHEET, START, OFFSET, TIME)
-    elif sys.argv[1] == 'end':
-        writetofile(FILENAME, SHEET, END, OFFSET, TIME)
+def main():
+    if len(sys.argv) == 2:
+        if sys.argv[1] == 'startpause':
+            writetofile(FILENAME, SHEET, START_PAUSE, OFFSET, TIME)
+        elif sys.argv[1] == 'endpause':
+            writetofile(FILENAME, SHEET, END_PAUSE, OFFSET, TIME)
+        elif sys.argv[1] == 'start':
+            writetofile(FILENAME, SHEET, START, OFFSET, TIME)
+        elif sys.argv[1] == 'end':
+            writetofile(FILENAME, SHEET, END, OFFSET, TIME)
     else:
         print("Wrong Parameter")
         print("start, end, startpause or endpause")
+
+
+if __name__ == '__main__':
+    main()
