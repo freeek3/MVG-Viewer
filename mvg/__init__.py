@@ -11,6 +11,8 @@ class GridFrame(wx.Frame):
     Y_POS = 0
     STATION = "Richard-Strauss-Straße"
     STATIONID = mvg_api.get_id_for_station(STATION)
+    ALLOWED_LABLES = ["U4"]
+    FORBIDDEN_LABELS = []
 
     def __init__(self):
 
@@ -40,10 +42,18 @@ class GridFrame(wx.Frame):
         # Start of Logic
 
         self.depatures = mvg_api.get_departures(self.STATIONID)
+        self.deltas = []
+        self.filterdepatures()
 
-        t = threading.Thread(target=self.destinationreload)
-        t.daemon = True
-        t.start()
+        # Thread is reloading the depatures
+        destloader = threading.Thread(target=self.destinationreload)
+        destloader.daemon = True
+        destloader.start()
+
+        # Thread who is counting down the time
+        timecounter = threading.Thread(target=self.timecounter)
+        timecounter.daemon = True
+        timecounter.start()
 
     def destinationreload(self):
 
@@ -52,32 +62,59 @@ class GridFrame(wx.Frame):
             rgb = tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
             return wx.Colour(rgb[0], rgb[1], rgb[2], 255)
 
-        def asigndepatures(self):
+        def asigndepatures():
             self.list_ctrl.DeleteAllItems()
+            self.deltas.clear()
+            t = time.time()
             for i, depature in enumerate(self.depatures):
-                if self.depatures[i]['departureTimeMinutes'] > 30:
-                    break;
-
                 self.list_ctrl.InsertItem(i, self.depatures[i]['label'])
                 self.list_ctrl.SetItem(i, 1, self.depatures[i]['destination'])
-                self.list_ctrl.SetItem(i, 2, str(self.depatures[i]['departureTimeMinutes']))
                 self.list_ctrl.SetItemColumnImage(i, 0, 0)
                 self.list_ctrl.SetItemBackgroundColour(i, hexToWxColour(self.depatures[i]['lineBackgroundColor']))
+                self.deltas.append(int(self.depatures[i]['departureTime'] / 1000 - t))
 
-        # def timereloader(self):
-
-        asigndepatures(self)
+        asigndepatures()
         while True:
-            sleeptime = (self.depatures[0]['departureTime'] / 1000) - time.time()
-            if sleeptime > 0:
-                time.sleep(sleeptime)
+            if len(self.depatures) > 0:
+                sleeptime = (self.depatures[0]['departureTime'] / 1000) - time.time()
+                if sleeptime > 0:
+                    time.sleep(sleeptime)
+                else:
+                    time.sleep(10)
+                    ndepatures = mvg_api.get_departures(self.STATIONID)
+                    if ndepatures[0] != self.depatures[0]:
+                        self.depatures = ndepatures
+                        self.filterdepatures()
+                        asigndepatures()
             else:
-                time.sleep(15)
-                ndepatures = mvg_api.get_departures(self.STATIONID)
-                if ndepatures[0] != self.depatures[0]:
-                    self.depatures = ndepatures
-                    asigndepatures(self)
+                time.sleep(300)
 
+    def timecounter(self):
+        while True:
+            for i, d in enumerate(self.deltas):
+                mins, secs = divmod(self.deltas[i], 60)
+                t = '{:02d}:{:02d}'.format(mins, secs)
+                self.list_ctrl.SetItem(i, 2, t)
+                self.deltas[i] -= 1
+            time.sleep(1)
+
+    def filterdepatures(self):
+        running = True
+        while running:
+            running = True
+            for i, d in enumerate(self.depatures):
+                if len(self.depatures) == 1:
+                    i = 0
+                    d = self.depatures[i]
+                    running = False
+                if d['label'] not in self.ALLOWED_LABLES or d['label'] in self.FORBIDDEN_LABELS:
+                    del self.depatures[i]
+                    break
+                if d['departureTimeMinutes'] > 30:
+                    del self.depatures[i]
+                    break
+                running = False
+                break
 
 def main():
     app = wx.App(False)
