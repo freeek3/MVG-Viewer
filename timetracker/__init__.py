@@ -5,7 +5,7 @@ import openpyxl
 
 TIME = datetime.datetime.now()
 FILENAME = 'example.xlsx'
-SHEET = 'Arbeitszeit'
+SHEET = 'worktime'
 START = 'C'
 END = 'D'
 START_PAUSE = 'F'
